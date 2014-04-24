@@ -13,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -22,6 +23,7 @@ public class MainActivity extends Activity implements SocketListener, CameraCont
     private CameraController _cameraController;
     private Thread _currentCaptureThread;
     private Timer timer;
+    private FunctionThresholdCalc _ftcalc;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +36,7 @@ public class MainActivity extends Activity implements SocketListener, CameraCont
 
         setContentView(R.layout.activity_main);
 
+        _ftcalc = new FunctionThresholdCalc();
         timer = new Timer();
 
         _cameraController = new CameraController(this, (FrameLayout) findViewById(R.id.preview_frm), this);
@@ -130,11 +133,10 @@ public class MainActivity extends Activity implements SocketListener, CameraCont
                     }
                     final float toDegrees = Float.parseFloat(angle_txt.getText().toString());
                     final int minutes = Integer.parseInt(captureTime_txt.getText().toString());
-
                     startCapturing(toDegrees, minutes);
                 }
                 else {
-                    _cameraController.closeCamera();
+                    stopCapturing();
                 }
             }
         });
@@ -147,8 +149,13 @@ public class MainActivity extends Activity implements SocketListener, CameraCont
 
     }
 
+    private void stopCapturing() {
+        _cameraController.closeCamera();
+        timer.cancel();
+    }
+
     private void startCapturing(float captureDegrees, float hours) {
-        int outputFPS = 60;
+        int outputFPS = 24;
         int outputVideoLenSec = 30;
 
         float captureSeconds = hours * 60 * 60;
@@ -156,8 +163,24 @@ public class MainActivity extends Activity implements SocketListener, CameraCont
         int totalOutputPictureNum = outputFPS * outputVideoLenSec;
         int takePictureEveryNumbedOfSeconds = (int)captureSeconds / totalOutputPictureNum;
 
+        _ftcalc.init(captureDegrees, totalOutputPictureNum,0.07f);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
 
-                _cameraController.takePicture();
+                float turnDeg = _ftcalc.getNextElem();
+                if(turnDeg == -1) {
+                    stopCapturing();
+                }
+                else {
+                    _cameraController.takePicture();
+                    if(turnDeg > 0) {
+                        String deltaStr = Float.toString(turnDeg);
+                        _connection.sendMessage("TURN:" + deltaStr);
+                    }
+                }
+            }
+        }, new Date(), takePictureEveryNumbedOfSeconds*1000);
 
     }
 

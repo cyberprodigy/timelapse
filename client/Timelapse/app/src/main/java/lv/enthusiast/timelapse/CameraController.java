@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by mitnick on 4/19/14.
@@ -34,13 +35,11 @@ public class CameraController {
         else {
             _listener.onCameraControllerInfo("Camera does not exist");
         }
+        openCamera();
     }
 
     public void takePicture() {
-        openCamera();
         camera.takePicture(null, null, mPicture);
-        //closeCamera();
-
     }
 
     private void openCamera() {
@@ -55,6 +54,13 @@ public class CameraController {
             _listener.onCameraControllerInfo("Could not retrieve camera instance");
         }
 
+        camera.setDisplayOrientation(90);
+        List<Camera.Size> supportedPictureSizes = camera.getParameters().getSupportedPictureSizes();
+        Camera.Parameters params =  camera.getParameters();
+        if (supportedPictureSizes != null) {
+            params.setPictureSize(supportedPictureSizes.get(13).width, supportedPictureSizes.get(13).height);
+        }
+        camera.setParameters(params);
         mPreview = new CameraPreview(_context, camera);
         _surface.addView(mPreview);
     }

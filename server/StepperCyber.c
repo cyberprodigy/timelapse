@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
 	  memcpy( command, recvBuff, 4 );
 	  if(strncmp(command, turn,4)==0) {
 	    float deg = atof(&recvBuff[5]);
-	    printf("will rotate %f", deg);
+	    printf("will rotate %f\n", deg);
 	    rotateDegrees(deg);
 	  }
 	  else {

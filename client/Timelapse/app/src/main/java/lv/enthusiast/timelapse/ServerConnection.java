@@ -1,5 +1,7 @@
 package lv.enthusiast.timelapse;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.os.StrictMode;
 
 import java.io.DataInputStream;
@@ -25,6 +27,7 @@ public class ServerConnection {
     }
     private Socket _socket;
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     public void connect(String ip, int port) {
         if(_socket == null) {
             try {
